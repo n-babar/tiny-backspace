@@ -31,13 +31,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Tiny Backspace Enhanced",
+    title="Tiny Backspace",
     description="A minimal coding agent that creates GitHub PRs from prompts with LLM and cloud sandboxing support",
     version="2.0.0"
 )
 
 # Set up OpenTelemetry tracing
-resource = Resource(attributes={"service.name": "tiny-backspace-enhanced"})
+resource = Resource(attributes={"service.name": "tiny-backspace"})
 provider = TracerProvider(resource=resource)
 processor = BatchSpanProcessor(ConsoleSpanExporter())
 provider.add_span_processor(processor)
@@ -64,7 +64,7 @@ class ConfigRequest(BaseModel):
 async def root():
     """Root endpoint with enhanced API information"""
     return {
-        "name": "Tiny Backspace Enhanced",
+        "name": "Tiny Backspace",
         "description": "A minimal coding agent that creates GitHub PRs from prompts with LLM and cloud sandboxing support",
         "version": "2.0.0",
         "features": {
@@ -85,7 +85,7 @@ async def health_check():
     """Enhanced health check with component status"""
     status = {
         "status": "healthy",
-        "service": "tiny-backspace-enhanced",
+        "service": "tiny-backspace",
         "components": {
             "git_operations": "available",
             "coding_agent": "available",
