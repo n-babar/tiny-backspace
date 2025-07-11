@@ -4,4 +4,16 @@ gitpython
 github3.py
 httpx
 python-dotenv
-requests 
+requests
+# Optional LLM dependencies
+openai
+anthropic
+# Optional cloud sandboxing dependencies
+docker
+boto3 
+
+# OpenTelemetry for tracing
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-console 

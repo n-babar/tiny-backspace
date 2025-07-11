@@ -91,6 +91,10 @@ class CodingAgent:
         if 'test' in prompt.lower():
             changes.extend(self._add_tests(analysis))
         
+        # Handle file creation requests
+        if any(keyword in prompt.lower() for keyword in ['add', 'create', 'new file', 'function']):
+            changes.extend(self._handle_file_creation(prompt, analysis))
+        
         return changes
     
     def _add_input_validation(self, analysis: Dict) -> List[Dict]:
@@ -190,6 +194,56 @@ if __name__ == '__main__':
                     'content': test_content,
                     'description': f'Created test file {test_file}'
                 })
+        
+        return changes
+    
+    def _handle_file_creation(self, prompt: str, analysis: Dict) -> List[Dict]:
+        """Handle requests to create new files"""
+        changes = []
+        
+        # Check if asking for Python file
+        if 'python' in prompt.lower() or 'py' in prompt.lower():
+            if 'hello' in prompt.lower() or 'function' in prompt.lower():
+                # Create a simple Python file with a hello function
+                python_content = '''def hello(name="World"):
+    """A simple hello function"""
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    print(hello())
+    print(hello("Python"))
+'''
+                
+                changes.append({
+                    'type': 'create',
+                    'file': 'hello.py',
+                    'content': python_content,
+                    'description': 'Created hello.py with a hello function'
+                })
+        
+        # Check if asking for README
+        if 'readme' in prompt.lower():
+            readme_content = '''# Project Description
+
+This is a sample project created by Tiny Backspace.
+
+## Features
+- Sample functionality
+- Easy to use
+
+## Usage
+Run the main script to see the output.
+
+## Contributing
+Feel free to contribute to this project!
+'''
+            
+            changes.append({
+                'type': 'create',
+                'file': 'README.md',
+                'content': readme_content,
+                'description': 'Created README.md with project description'
+            })
         
         return changes
     

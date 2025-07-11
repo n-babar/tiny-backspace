@@ -2,173 +2,403 @@
 
 A minimal coding agent that creates GitHub PRs from prompts using FastAPI and Server-Sent Events.
 
-## Overview
+## 🌐 Public URL
+If deployed, you can access the API at:
 
-Tiny Backspace is a streaming API that takes a GitHub repository URL and a coding prompt, then automatically:
-1. Clones the repository into a sandbox
-2. Analyzes the codebase
-3. Generates and applies code changes based on the prompt
-4. Creates a git branch, commits changes, and pushes to remote
-5. Creates a pull request with the changes
-
-## Features
-
-- **Streaming API**: Real-time updates via Server-Sent Events
-- **Sandboxed Environment**: Safe repository cloning and modification
-- **Git Integration**: Automatic branch creation, commits, and PR generation
-- **Simple Agent**: Rule-based code modifications (easily extensible to use LLMs)
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- Git
-- GitHub CLI (optional, for PR creation)
-
-### Installation
-
-1. Clone this repository:
-```bash
-git clone <your-repo-url>
-cd tiny-backspace
+```
+https://<your-deployment-domain>/
 ```
 
-2. Install dependencies:
+Replace `<your-deployment-domain>` with your actual deployment address (e.g., on Render, Heroku, AWS, etc.).
+
+- **Health check:** `GET /health`
+- **API info:** `GET /`
+- **Main endpoint:** `POST /code`
+- **Legacy endpoint:** `POST /code/legacy`
+
+## 🖥️ Running Locally
+
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   # For LLM features:
+   pip install openai anthropic
+   # For cloud sandboxing:
+   pip install docker boto3
+   ```
+2. **Set environment variables:**
+   - `GITHUB_TOKEN` (required for PR creation)
+   - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (optional, for LLM features)
+3. **Start the server:**
+   ```bash
+   uvicorn main:app --reload --port 8000
+   # or
+   python main.py
+   ```
+4. **Test the API:**
+   ```bash
+   python test.py
+   ```
+
+## 🤖 Coding Agent Approach
+
+This project uses a **hybrid agent approach**:
+- **LLM-Enhanced Agent:** Uses OpenAI or Anthropic LLMs for code analysis and generation if API keys are provided.
+- **Rule-Based Agent:** Falls back to a deterministic, rule-based agent if LLMs are unavailable or fail.
+
+**Why this approach?**
+- **Reliability:** Ensures the system always works, even if LLM APIs are down or unavailable.
+- **Flexibility:** Users can opt-in to advanced LLM features or stick with the rule-based agent.
+- **Transparency:** The system clearly indicates which agent was used and why in the PR and API responses.
+
+## 🚀 Features
+
+### Core Features
+- **FastAPI-based streaming API** with Server-Sent Events
+- **Sandboxed repository cloning** for security
+- **Coding agent** for analysis and modification
+- **Git operations** (commit, push, PR creation)
+- **Error handling** and graceful degradation
+
+### Enhanced Features
+- **LLM Integration**: OpenAI GPT-4/3.5 and Anthropic Claude support
+- **Cloud Sandboxing**: Docker containers and AWS Lambda framework
+- **Backward Compatibility**: Original endpoints still work
+- **Configuration Management**: Runtime configuration updates
+- **Health Monitoring**: Component status reporting
+
+## 📋 Requirements
+
+### Core Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set up GitHub token (optional, for PR creation):
+### Optional Dependencies
+For LLM features:
 ```bash
-export GITHUB_TOKEN=your_github_token_here
+pip install openai anthropic
 ```
 
-### Running Locally
-
-1. Start the server:
+For cloud sandboxing:
 ```bash
-python3 -m uvicorn main:app --port 8000
+pip install docker boto3
 ```
 
-2. Test the endpoint:
-```bash
-python3 test_full_stream.py
-```
-
-### API Usage
-
-**Endpoint**: `POST /code`
-
-**Request Body**:
-```json
-{
-  "repoUrl": "https://github.com/example/simple-api",
-  "prompt": "Add input validation to all POST endpoints and return proper error messages"
-}
-```
-
-**Response**: Server-Sent Events stream with real-time updates
-
-### Example Response Stream
-
-```
-ℹ️  INFO: Received request
-⏳ PROGRESS: Cloning repository...
-✅ SUCCESS: Repository cloned to /tmp/tiny_backspace_xxx
-⏳ PROGRESS: Initializing coding agent...
-ℹ️  INFO: Repository analysis complete. Found 5 files.
-⏳ PROGRESS: Analyzing prompt and generating changes...
-ℹ️  INFO: Generated 2 changes
-⏳ PROGRESS: Applying changes to repository...
-📝 CHANGE: Edited app.py: Added type hints to app.py
-📝 CHANGE: Created app_test.py: Created test file app_test.py
-⏳ PROGRESS: Creating git branch...
-✅ SUCCESS: Created branch: feature/auto-add-input-valid
-⏳ PROGRESS: Committing changes...
-✅ SUCCESS: Changes committed
-⏳ PROGRESS: Pushing branch to remote...
-✅ SUCCESS: Branch pushed to remote
-⏳ PROGRESS: Creating pull request...
-✅ SUCCESS: Pull request created!
-🎉 DONE: Process completed successfully!
-🔗 PR URL: https://github.com/example/simple-api/pull/123
-```
-
-## Architecture
-
-### Components
-
-1. **FastAPI Server** (`main.py`): Handles HTTP requests and streams events
-2. **Git Operations** (`git_operations.py`): Manages repository cloning, branching, and PR creation
-3. **Coding Agent** (`coding_agent.py`): Analyzes codebase and generates changes
-4. **Sandbox Environment**: Temporary directory for safe code modification
-
-### Flow
-
-1. **Request Received**: API accepts repo URL and coding prompt
-2. **Repository Cloning**: Git operations clone the repo to a temporary sandbox
-3. **Code Analysis**: Agent analyzes repository structure and identifies files
-4. **Change Generation**: Agent generates code changes based on the prompt
-5. **Change Application**: Changes are applied to files in the sandbox
-6. **Git Operations**: New branch created, changes committed and pushed
-7. **PR Creation**: Pull request created with descriptive title and body
-8. **Cleanup**: Temporary sandbox directory removed
-
-## Configuration
+## 🔧 Configuration
 
 ### Environment Variables
 
-- `GITHUB_TOKEN`: GitHub Personal Access Token for PR creation (optional)
+#### Required
+- `GITHUB_TOKEN`: GitHub personal access token for PR creation
 
-### Customization
+#### Optional LLM
+- `OPENAI_API_KEY`: OpenAI API key
+- `ANTHROPIC_API_KEY`: Anthropic API key
+- `DEFAULT_LLM_PROVIDER`: Default LLM provider (openai, anthropic, rule_based)
+- `DEFAULT_LLM_MODEL`: Default LLM model
 
-The coding agent in `coding_agent.py` can be easily extended to:
-- Use LLM APIs (OpenAI, Claude, etc.) for more sophisticated code generation
-- Add more rule-based transformations
-- Integrate with code analysis tools
-- Add support for different programming languages
+#### Optional Sandboxing
+- `AWS_ACCESS_KEY_ID`: AWS access key for Lambda sandboxing
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key for Lambda sandboxing
+- `DEFAULT_SANDBOX_PROVIDER`: Default sandbox provider (local, docker, aws)
 
-## Testing
+#### Server Configuration
+- `HOST`: Server host (default: 0.0.0.0)
+- `PORT`: Server port (default: 8000)
+- `DEBUG`: Enable debug mode (default: false)
 
-### Unit Tests
+## 🚀 Quick Start
+
+### 1. Start the Server
+
 ```bash
-python3 simple_test.py
+# Start the enhanced server
+python main.py
+
+# Or with uvicorn
+uvicorn main:app --reload --port 8000
 ```
 
-### Integration Tests
+### 2. Test the API
+
 ```bash
-python3 test_full_stream.py
+# Run comprehensive tests
+python test.py
+```
+
+### 3. Make a Request
+
+#### Basic Usage (Backward Compatible)
+```bash
+curl -X POST "http://localhost:8000/code/legacy" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/username/repo",
+    "prompt": "Add error handling"
+  }'
+```
+
+#### Enhanced Usage (LLM + Cloud Sandboxing)
+```bash
+curl -X POST "http://localhost:8000/code" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/username/repo",
+    "prompt": "Add error handling to the main function",
+    "use_llm": true,
+    "llm_provider": "openai",
+    "llm_model": "gpt-4",
+    "use_cloud_sandbox": true,
+    "sandbox_provider": "docker"
+  }'
+```
+
+## 📚 API Reference
+
+### Endpoints
+
+#### `POST /code`
+Main endpoint with LLM and cloud sandboxing support.
+
+**Request Body:**
+```json
+{
+  "repoUrl": "string",
+  "prompt": "string",
+  "use_llm": false,
+  "llm_provider": "rule_based",
+  "llm_model": "gpt-4",
+  "use_cloud_sandbox": false,
+  "sandbox_provider": "local"
+}
+```
+
+**Response:** Server-Sent Events stream
+
+#### `POST /code/legacy`
+Original endpoint for backward compatibility.
+
+**Request Body:**
+```json
+{
+  "repoUrl": "string",
+  "prompt": "string"
+}
+```
+
+#### `GET /health`
+Enhanced health check with component status.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "service": "tiny-backspace-enhanced",
+  "components": {
+    "git_operations": "available",
+    "coding_agent": "available",
+    "llm_agent": "available",
+    "cloud_sandbox": "available",
+    "openai": "available",
+    "anthropic": "not_installed",
+    "docker": "available"
+  }
+}
+```
+
+#### `GET /`
+API information and feature list.
+
+#### `POST /config`
+Update runtime configuration.
+
+## 🔧 Advanced Usage
+
+### LLM Configuration
+
+#### OpenAI
+```python
+from llm_agent import LLMConfig, LLMCodingAgent
+
+config = LLMConfig(
+    provider="openai",
+    model="gpt-4",
+    api_key="your-api-key",
+    max_tokens=4000,
+    temperature=0.1
+)
+
+agent = LLMCodingAgent(config)
+```
+
+#### Anthropic
+```python
+config = LLMConfig(
+    provider="anthropic",
+    model="claude-3-sonnet-20240229",
+    api_key="your-api-key",
+    max_tokens=4000,
+    temperature=0.1
+)
+```
+
+### Cloud Sandboxing
+
+#### Docker
+```python
+from cloud_sandbox import CloudSandboxConfig, CloudSandbox
+
+config = CloudSandboxConfig(
+    provider="docker",
+    timeout_seconds=300,
+    memory_limit_mb=1024,
+    cpu_limit=2.0,
+    docker_image="python:3.9-slim"
+)
+
+sandbox = CloudSandbox(config)
+```
+
+## 🧪 Testing
+
+### Run All Tests
+```bash
+python test.py
+```
+
+### Test Specific Features
+```bash
+# Test LLM features (requires API keys)
+export OPENAI_API_KEY="your-key"
+python test.py
+
+# Test Docker sandboxing (requires Docker)
+python test.py
 ```
 
 ### Manual Testing
 ```bash
-curl -X POST http://127.0.0.1:8000/code \
-  -H "Content-Type: application/json" \
-  -d '{"repoUrl": "https://github.com/example/repo", "prompt": "Add error handling"}'
+# Start server
+python main.py
+
+# In another terminal, test endpoints
+curl http://localhost:8000/health
+curl http://localhost:8000/
 ```
 
-## Deployment
+## 🔒 Security & Safety
 
-### Local Development
+### Sandboxing Features
+- **Isolated Execution**: All code runs in controlled environments
+- **Resource Limits**: Memory and CPU constraints prevent abuse
+- **Timeout Controls**: Automatic termination of long-running processes
+- **Cleanup**: Automatic resource cleanup after execution
+
+### API Security
+- **Environment Variables**: Secure API key management
+- **Error Handling**: No sensitive information in error messages
+- **Input Validation**: Comprehensive request validation
+- **Rate Limiting**: Framework ready for production deployment
+
+## 🛠️ Deployment
+
+### Development
 ```bash
-python3 -m uvicorn main:app --reload --port 8000
+# Local development
+python main.py
 ```
 
 ### Production
 ```bash
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+# Docker deployment
+docker build -t tiny-backspace-enhanced .
+docker run -p 8000:8000 tiny-backspace-enhanced
+
+# Environment variables
+export GITHUB_TOKEN="your-token"
+export OPENAI_API_KEY="your-key"
+export DEFAULT_LLM_PROVIDER="openai"
+export DEFAULT_SANDBOX_PROVIDER="docker"
 ```
 
-## Contributing
+### Cloud Deployment
+- **AWS Lambda**: Serverless deployment ready
+- **Docker Containers**: Container orchestration ready
+- **Kubernetes**: Helm charts can be created
+- **CI/CD**: GitHub Actions integration ready
+
+## 📊 Project Structure
+
+```
+tiny-backspace/
+├── main.py              # Enhanced FastAPI application
+├── coding_agent.py      # Core coding agent
+├── git_operations.py    # Git operations
+├── llm_agent.py         # LLM integration
+├── cloud_sandbox.py     # Cloud sandboxing
+├── config.py            # Configuration management
+├── requirements.txt     # Dependencies
+├── test.py              # Comprehensive test suite
+├── README.md            # This file
+└── example_repo/        # Example repository for testing
+```
+
+## 🔮 Future Enhancements
+
+### Immediate Opportunities
+1. **Full AWS Lambda Implementation**: Complete serverless sandboxing
+2. **GCP Cloud Run Integration**: Alternative cloud provider
+3. **Advanced Caching**: LLM response caching for cost optimization
+4. **Rate Limiting**: Production-grade rate limiting
+5. **Metrics & Monitoring**: Prometheus/Grafana integration
+
+### Long-term Vision
+1. **Multi-LLM Orchestration**: Intelligent LLM selection
+2. **Advanced Security**: Code scanning and vulnerability detection
+3. **Team Collaboration**: Multi-user support and permissions
+4. **Plugin System**: Extensible architecture for custom integrations
+5. **AI Model Fine-tuning**: Custom models for specific domains
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests
+3. Add tests for new features
+4. Ensure backward compatibility
 5. Submit a pull request
 
-## License
+## 📄 License
 
-MIT License
+MIT License - see LICENSE file for details.
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+#### LLM API Errors
+- Check API key validity
+- Verify API quota and limits
+- Ensure proper environment variables
+
+#### Docker Sandbox Issues
+- Verify Docker is running
+- Check Docker permissions
+- Ensure sufficient disk space
+
+#### GitHub Token Issues
+- Verify token has appropriate permissions
+- Check token expiration
+- Ensure repository access
+
+### Debug Mode
+```bash
+export DEBUG=true
+python main.py
+```
+
+### Logs
+Check application logs for detailed error information and debugging.
+
+---
 
