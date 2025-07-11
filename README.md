@@ -24,7 +24,7 @@ https://<your-deployment-domain>/
 
 **Note:** Replace `<your-deployment-domain>` with your actual deployment URL after deploying to your chosen platform.
 
-## ��️ Running Locally
+## 🖥️ Running Locally
 
 ### Prerequisites
 - Python 3.8+
