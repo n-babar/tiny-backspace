@@ -3,18 +3,26 @@
 A minimal coding agent that creates GitHub PRs from prompts using FastAPI and Server-Sent Events.
 
 ## 🌐 Public URL
-If deployed, you can access the API at:
+
+When deployed to a cloud platform, you can access the API at:
 
 ```
 https://<your-deployment-domain>/
 ```
 
-Replace `<your-deployment-domain>` with your actual deployment address (e.g., on Render, Heroku, AWS, etc.).
+**Examples:**
+- Render: `https://tiny-backspace.onrender.com/`
+- Heroku: `https://your-app-name.herokuapp.com/`
+- Railway: `https://tiny-backspace.railway.app/`
+- AWS: `https://your-api-gateway-url.amazonaws.com/`
 
-- **Health check:** `GET /health`
-- **API info:** `GET /`
-- **Main endpoint:** `POST /code`
-- **Legacy endpoint:** `POST /code/legacy`
+**Available Endpoints:**
+- **Health Check:** `GET /health` - Check if the service is running
+- **API Info:** `GET /` - Get API documentation and status
+- **Main Endpoint:** `POST /code` - Create PRs with LLM and sandboxing support
+- **Legacy Endpoint:** `POST /code/legacy` - Original endpoint for backward compatibility
+
+**Note:** Replace `<your-deployment-domain>` with your actual deployment URL after deploying to your chosen platform.
 
 ## 🖥️ Running Locally
 
