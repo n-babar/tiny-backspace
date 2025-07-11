@@ -21,21 +21,42 @@ Replace `<your-deployment-domain>` with your actual deployment address (e.g., on
 1. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
-   # For LLM features:
-   pip install openai anthropic
-   # For cloud sandboxing:
-   pip install docker boto3
    ```
-2. **Set environment variables:**
+   
+   **Note:** The requirements.txt file includes all necessary dependencies. Optional LLM and cloud sandboxing packages are already included and will be installed automatically.
+
+2. **Install GitHub CLI (for PR creation):**
+   ```bash
+   # macOS
+   brew install gh
+   
+   # Ubuntu/Debian
+   sudo apt install gh
+   
+   # Windows
+   winget install GitHub.cli
+   ```
+
+3. **Set environment variables:**
    - `GITHUB_TOKEN` (required for PR creation)
    - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (optional, for LLM features)
-3. **Start the server:**
+
+4. **Authenticate GitHub CLI:**
    ```bash
-   uvicorn main:app --reload --port 8000
-   # or
-   python main.py
+   gh auth login --with-token <<< "your-github-token"
    ```
-4. **Test the API:**
+
+5. **Start the server:**
+   ```bash
+   # From the project directory
+   uvicorn main:app --reload --port 8000
+   
+   # Or with environment variables
+   export GITHUB_TOKEN="your-token"
+   uvicorn main:app --reload --port 8000
+   ```
+
+6. **Test the API:**
    ```bash
    python test.py
    ```
@@ -153,6 +174,8 @@ curl -X POST "http://localhost:8000/code" \
     "sandbox_provider": "docker"
   }'
 ```
+
+**Note:** Use `--no-buffer` flag to see real-time streaming events.
 
 ## 📚 API Reference
 
@@ -371,6 +394,4 @@ python main.py
 
 ### Logs
 Check application logs for detailed error information and debugging.
-
----
 
