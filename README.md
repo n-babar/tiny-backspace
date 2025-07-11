@@ -24,16 +24,21 @@ https://<your-deployment-domain>/
 
 **Note:** Replace `<your-deployment-domain>` with your actual deployment URL after deploying to your chosen platform.
 
-## 🖥️ Running Locally
+## ��️ Running Locally
+
+### Prerequisites
+- Python 3.8+
+- GitHub CLI (for PR creation)
+- GitHub Personal Access Token
+
+### Setup Steps
 
 1. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
-   
-   **Note:** The requirements.txt file includes all necessary dependencies. Optional LLM and cloud sandboxing packages are already included and will be installed automatically.
 
-2. **Install GitHub CLI (for PR creation):**
+2. **Install GitHub CLI:**
    ```bash
    # macOS
    brew install gh
@@ -46,8 +51,12 @@ https://<your-deployment-domain>/
    ```
 
 3. **Set environment variables:**
-   - `GITHUB_TOKEN` (required for PR creation)
-   - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (optional, for LLM features)
+   ```bash
+   export GITHUB_TOKEN="your-github-token"
+   # Optional: For LLM features
+   export OPENAI_API_KEY="your-openai-key"
+   export ANTHROPIC_API_KEY="your-anthropic-key"
+   ```
 
 4. **Authenticate GitHub CLI:**
    ```bash
@@ -56,11 +65,6 @@ https://<your-deployment-domain>/
 
 5. **Start the server:**
    ```bash
-   # From the project directory
-   uvicorn main:app --reload --port 8000
-   
-   # Or with environment variables
-   export GITHUB_TOKEN="your-token"
    uvicorn main:app --reload --port 8000
    ```
 
@@ -72,47 +76,82 @@ https://<your-deployment-domain>/
 ## 🤖 Coding Agent Approach
 
 This project uses a **hybrid agent approach**:
-- **LLM-Enhanced Agent:** Uses OpenAI or Anthropic LLMs for code analysis and generation if API keys are provided.
-- **Rule-Based Agent:** Falls back to a deterministic, rule-based agent if LLMs are unavailable or fail.
 
-**Why this approach?**
-- **Reliability:** Ensures the system always works, even if LLM APIs are down or unavailable.
-- **Flexibility:** Users can opt-in to advanced LLM features or stick with the rule-based agent.
-- **Transparency:** The system clearly indicates which agent was used and why in the PR and API responses.
+### **Rule-Based Agent (Default)**
+- **Works without API keys** - always available
+- **Handles basic prompts** like:
+  - "Create a new Python file with a function"
+  - "Add a new test file called integration_test.py"
+  - "Create a new configuration file"
+- **Fast and predictable** - instant responses
+- **Limited to simple patterns** - creates basic files and functions
+
+### **LLM-Enhanced Agent (Optional)**
+- **Requires OpenAI or Anthropic API keys**
+- **Handles complex prompts** like:
+  - "Refactor the authentication system to use JWT tokens"
+  - "Add comprehensive error handling to all API endpoints"
+  - "Convert this synchronous code to async/await"
+- **Analyzes codebase** and generates intelligent changes
+- **Falls back to rule-based** if LLMs are unavailable
+
+### **Why This Approach?**
+- **Reliability:** System always works, even if LLM APIs are down
+- **Flexibility:** Users can choose simple or advanced features
+- **Transparency:** Clear indication of which agent was used
 
 ## 🚀 Features
 
 ### Core Features
 - **FastAPI-based streaming API** with Server-Sent Events
 - **Sandboxed repository cloning** for security
-- **Coding agent** for analysis and modification
+- **Hybrid coding agent** (rule-based + LLM)
 - **Git operations** (commit, push, PR creation)
-- **Error handling** and graceful degradation
+- **Real-time event streaming** for progress updates
 
 ### Enhanced Features
 - **LLM Integration**: OpenAI GPT-4/3.5 and Anthropic Claude support
 - **Cloud Sandboxing**: Docker containers and AWS Lambda framework
 - **Backward Compatibility**: Original endpoints still work
-- **Configuration Management**: Runtime configuration updates
 - **Health Monitoring**: Component status reporting
 
-## 📋 Requirements
+## 📋 API Usage
 
-### Core Dependencies
+### Basic Usage (Rule-Based Agent)
 ```bash
-pip install -r requirements.txt
+curl -X POST "http://localhost:8000/code" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/username/repo",
+    "prompt": "Create a new Python file with a function",
+    "use_llm": false
+  }' --no-buffer
 ```
 
-### Optional Dependencies
-For LLM features:
+### Advanced Usage (LLM Agent)
 ```bash
-pip install openai anthropic
+curl -X POST "http://localhost:8000/code" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/username/repo",
+    "prompt": "Add comprehensive error handling to all API endpoints",
+    "use_llm": true,
+    "llm_provider": "openai",
+    "llm_model": "gpt-4"
+  }' --no-buffer
 ```
 
-For cloud sandboxing:
+### Legacy Endpoint (Backward Compatible)
 ```bash
-pip install docker boto3
+curl -X POST "http://localhost:8000/code/legacy" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/username/repo",
+    "prompt": "Add error handling"
+  }'
 ```
+
+**Note:** Use `--no-buffer` flag to see real-time streaming events.
 
 ## 🔧 Configuration
 
@@ -137,160 +176,6 @@ pip install docker boto3
 - `PORT`: Server port (default: 8000)
 - `DEBUG`: Enable debug mode (default: false)
 
-## 🚀 Quick Start
-
-### 1. Start the Server
-
-```bash
-# Start the enhanced server
-python main.py
-
-# Or with uvicorn
-uvicorn main:app --reload --port 8000
-```
-
-### 2. Test the API
-
-```bash
-# Run comprehensive tests
-python test.py
-```
-
-### 3. Make a Request
-
-#### Basic Usage (Backward Compatible)
-```bash
-curl -X POST "http://localhost:8000/code/legacy" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "repoUrl": "https://github.com/username/repo",
-    "prompt": "Add error handling"
-  }'
-```
-
-#### Enhanced Usage (LLM + Cloud Sandboxing)
-```bash
-curl -X POST "http://localhost:8000/code" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "repoUrl": "https://github.com/username/repo",
-    "prompt": "Add error handling to the main function",
-    "use_llm": true,
-    "llm_provider": "openai",
-    "llm_model": "gpt-4",
-    "use_cloud_sandbox": true,
-    "sandbox_provider": "docker"
-  }'
-```
-
-**Note:** Use `--no-buffer` flag to see real-time streaming events.
-
-## 📚 API Reference
-
-### Endpoints
-
-#### `POST /code`
-Main endpoint with LLM and cloud sandboxing support.
-
-**Request Body:**
-```json
-{
-  "repoUrl": "string",
-  "prompt": "string",
-  "use_llm": false,
-  "llm_provider": "rule_based",
-  "llm_model": "gpt-4",
-  "use_cloud_sandbox": false,
-  "sandbox_provider": "local"
-}
-```
-
-**Response:** Server-Sent Events stream
-
-#### `POST /code/legacy`
-Original endpoint for backward compatibility.
-
-**Request Body:**
-```json
-{
-  "repoUrl": "string",
-  "prompt": "string"
-}
-```
-
-#### `GET /health`
-Enhanced health check with component status.
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "service": "tiny-backspace-enhanced",
-  "components": {
-    "git_operations": "available",
-    "coding_agent": "available",
-    "llm_agent": "available",
-    "cloud_sandbox": "available",
-    "openai": "available",
-    "anthropic": "not_installed",
-    "docker": "available"
-  }
-}
-```
-
-#### `GET /`
-API information and feature list.
-
-#### `POST /config`
-Update runtime configuration.
-
-## 🔧 Advanced Usage
-
-### LLM Configuration
-
-#### OpenAI
-```python
-from llm_agent import LLMConfig, LLMCodingAgent
-
-config = LLMConfig(
-    provider="openai",
-    model="gpt-4",
-    api_key="your-api-key",
-    max_tokens=4000,
-    temperature=0.1
-)
-
-agent = LLMCodingAgent(config)
-```
-
-#### Anthropic
-```python
-config = LLMConfig(
-    provider="anthropic",
-    model="claude-3-sonnet-20240229",
-    api_key="your-api-key",
-    max_tokens=4000,
-    temperature=0.1
-)
-```
-
-### Cloud Sandboxing
-
-#### Docker
-```python
-from cloud_sandbox import CloudSandboxConfig, CloudSandbox
-
-config = CloudSandboxConfig(
-    provider="docker",
-    timeout_seconds=300,
-    memory_limit_mb=1024,
-    cpu_limit=2.0,
-    docker_image="python:3.9-slim"
-)
-
-sandbox = CloudSandbox(config)
-```
-
 ## 🧪 Testing
 
 ### Run All Tests
@@ -298,86 +183,39 @@ sandbox = CloudSandbox(config)
 python test.py
 ```
 
-### Test Specific Features
-```bash
-# Test LLM features (requires API keys)
-export OPENAI_API_KEY="your-key"
-python test.py
-
-# Test Docker sandboxing (requires Docker)
-python test.py
-```
-
 ### Manual Testing
 ```bash
-# Start server
-python main.py
-
-# In another terminal, test endpoints
+# Test health endpoint
 curl http://localhost:8000/health
-curl http://localhost:8000/
+
+# Test basic functionality
+curl -X POST "http://localhost:8000/code" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/n-babar/tiny-backspace",
+    "prompt": "Create a new Python file with a function",
+    "use_llm": false
+  }' --no-buffer
 ```
 
-## 🔒 Security & Safety
-
-### Sandboxing Features
-- **Isolated Execution**: All code runs in controlled environments
-- **Resource Limits**: Memory and CPU constraints prevent abuse
-- **Timeout Controls**: Automatic termination of long-running processes
-- **Cleanup**: Automatic resource cleanup after execution
-
-### API Security
-- **Environment Variables**: Secure API key management
-- **Error Handling**: No sensitive information in error messages
-- **Input Validation**: Comprehensive request validation
-- **Rate Limiting**: Framework ready for production deployment
-
-## 🛠️ Deployment
-
-### Development
-```bash
-# Local development
-python main.py
-```
-
-### Production
-```bash
-# Docker deployment
-docker build -t tiny-backspace-enhanced .
-docker run -p 8000:8000 tiny-backspace-enhanced
-
-# Environment variables
-export GITHUB_TOKEN="your-token"
-export OPENAI_API_KEY="your-key"
-export DEFAULT_LLM_PROVIDER="openai"
-export DEFAULT_SANDBOX_PROVIDER="docker"
-```
-
-### Cloud Deployment
-- **AWS Lambda**: Serverless deployment ready
-- **Docker Containers**: Container orchestration ready
-- **Kubernetes**: Helm charts can be created
-- **CI/CD**: GitHub Actions integration ready
-
-## 📊 Project Structure
-
-```
-tiny-backspace/
-├── main.py              # Enhanced FastAPI application
-├── coding_agent.py      # Core coding agent
-├── git_operations.py    # Git operations
-├── llm_agent.py         # LLM integration
-├── cloud_sandbox.py     # Cloud sandboxing
-├── config.py            # Configuration management
-├── requirements.txt     # Dependencies
-├── test.py              # Comprehensive test suite
-├── README.md            # This file
-└── example_repo/        # Example repository for testing
-```
-
-## 🆘 Troubleshooting
+## 🛠️ Troubleshooting
 
 ### Common Issues
+
+#### Server Won't Start
+```bash
+# Check if port is in use
+lsof -i :8000
+kill -9 <process-id>
+
+# Check imports
+python3 -c "import main; print('✅ Imports successful')"
+```
+
+#### GitHub Token Issues
+- Verify token has `repo` permissions
+- Check token expiration
+- Ensure repository access
 
 #### LLM API Errors
 - Check API key validity
@@ -389,17 +227,24 @@ tiny-backspace/
 - Check Docker permissions
 - Ensure sufficient disk space
 
-#### GitHub Token Issues
-- Verify token has appropriate permissions
-- Check token expiration
-- Ensure repository access
-
 ### Debug Mode
 ```bash
 export DEBUG=true
 python main.py
 ```
 
-### Logs
-Check application logs for detailed error information and debugging.
+## 📊 Project Structure
+
+```
+tiny-backspace/
+├── main.py              # FastAPI application
+├── coding_agent.py      # Rule-based coding agent
+├── llm_agent.py         # LLM integration
+├── git_operations.py    # Git operations
+├── cloud_sandbox.py     # Cloud sandboxing
+├── config.py            # Configuration management
+├── requirements.txt     # Dependencies
+├── test.py              # Test suite
+└── README.md            # This file
+```
 
